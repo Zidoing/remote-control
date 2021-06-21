@@ -1,7 +1,7 @@
 const eventEmitter = require("events");
 const peer = new eventEmitter();
 
-const {desktopCapturer} = require("electron");
+const {desktopCapturer, ipcRenderer} = require("electron");
 
 
 async function getScreenStream() {
@@ -27,6 +27,15 @@ async function getScreenStream() {
 }
 
 getScreenStream();
+
+peer.on("robot", (type, data) => {
+  if (type === "mouse") {
+    data.screen = {width: window.screen.width, height: window.screen.height}
+    ipcRenderer.send("robot", type, data)
+  } else if (type === "key") {
+    ipcRenderer.send("robot", type, data)
+  }
+})
 
 console.log("start peer control")
 
