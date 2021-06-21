@@ -1,6 +1,6 @@
-const eventEmitter = require("./peer-control");
+const peer = require("./peer-control");
 
-eventEmitter.on("add-stream", (stream) => {
+peer.on("add-stream", (stream) => {
   console.log("play stream")
   play(stream)
 })
@@ -22,7 +22,7 @@ window.onkeydown = function (e) {
     control: e.ctrlKey,
     alt: e.altKey
   }
-  eventEmitter.emit("robot", "key", data)
+  peer.emit("robot", "key", data)
 }
 
 
@@ -37,5 +37,5 @@ window.onmouseup = function (e) {
     height: video.getBoundingClientRect().height
   }
 
-  eventEmitter.emit("robot", "mouse", data)
+  peer.emit("robot", "mouse", data)
 };

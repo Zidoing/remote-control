@@ -7,8 +7,8 @@ const {create: createControlWindow} = require("./windows/control")
 
 app.allowRendererProcessReuse = false;
 app.on("ready", () => {
-  // createMainWindow()
-  createControlWindow()
+  createMainWindow()
+  // createControlWindow()
   handleIPC()
   require('./robot.js')()
 })

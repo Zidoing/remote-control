@@ -4,39 +4,60 @@ const peer = new eventEmitter();
 const {desktopCapturer, ipcRenderer} = require("electron");
 
 
-async function getScreenStream() {
-  const sources = await desktopCapturer.getSources({types: ["screen"]});
+// peer.on("robot", (type, data) => {
+//   if (type === "mouse") {
+//     data.screen = {width: window.screen.width, height: window.screen.height}
+//     ipcRenderer.send("robot", type, data)
+//   } else if (type === "key") {
+//     ipcRenderer.send("robot", type, data)
+//   }
+// })
 
-  navigator.webkitGetUserMedia({
-    audio: false,
-    video: {
-      mandatory: {
-        chromeMediaSource: "desktop",
-        chromeMediaSourceId: sources[0].id,
-        maxWidth: window.screen.width,
-        maxHeight: window.screen.height
-      }
+const pc = new window.RTCPeerConnection({})
+
+pc.onicecandidate = function (e) {
+  console.log('candidate', JSON.stringify(e.candidate));
+};
+
+let candidates = []
+
+async function addIceCandidate(candidate) {
+  if (candidate) {
+    candidates.push(candidate);
+  }
+  if (pc.remoteDescription && pc.remoteDescription.type) {
+    for (const item of candidates) {
+      await pc.addIceCandidate(new RTCIceCandidate(item))
     }
-  }, (stream) => {
-    console.log("emit add stream")
-    peer.emit("add-stream", stream)
-  }, (err) => {
-    console.log(err)
-  })
+    candidates = []
 
+  }
 }
 
-getScreenStream();
+window.addIceCandidate = addIceCandidate;
 
-peer.on("robot", (type, data) => {
-  if (type === "mouse") {
-    data.screen = {width: window.screen.width, height: window.screen.height}
-    ipcRenderer.send("robot", type, data)
-  } else if (type === "key") {
-    ipcRenderer.send("robot", type, data)
-  }
-})
+async function createOffer() {
+  const offer = await pc.createOffer({
+    offerToReceiveAudio: false,
+    offerToReceiveVideo: true
+  })
 
-console.log("start peer control")
+  await pc.setLocalDescription(offer);
+  console.log("pc offer", JSON.stringify(offer))
+  return pc.localDescription
+}
+
+createOffer();
+
+async function setRemote(answer) {
+  await pc.setRemoteDescription(answer);
+}
+
+window.setRemote = setRemote
+
+pc.onaddstream = function (e) {
+  console.log("addstream", e)
+  peer.emit("add-stream", e.stream)
+};
 
 module.exports = peer;
